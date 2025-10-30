@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preprocesamiento - Procesamiento de Lenguaje Natural</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(212, 98, 42, 0.2);
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .emoji {
+            font-size: clamp(3rem, 8vw, 5rem);
+            margin-bottom: 1rem;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(212, 98, 42, 0.15);
+        }
+
+        .section-title {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: #d4622a;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: linear-gradient(180deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 5px;
+        }
+
+        .code-container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-header {
+            background: #1a1a1a;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px 10px 0 0;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        pre {
+            margin: 0;
+            color: #f8f8f2;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .comment { color: #6272a4; font-style: italic; }
+        .function { color: #50fa7b; }
+        .variable { color: #8be9fd; }
+        .number { color: #bd93f9; }
+
+        .glossary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .glossary-item {
+            background: linear-gradient(135deg, #fff9f0 0%, #ffe8cc 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #ff8c42;
+            transition: all 0.3s ease;
+        }
+
+        .glossary-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.15);
+        }
+
+        .glossary-title {
+            font-size: 1.3rem;
+            color: #d4622a;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .glossary-description {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left: 5px solid #ff8c42;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+
+        .info-box h3 {
+            color: #d4622a;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .steps-container {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .step {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #ffb347;
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.1);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            color: #d4622a;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .step-content p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.3);
+            margin-top: 2rem;
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(212, 98, 42, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .section {
+                padding: 1.5rem;
+            }
+            
+            .code-container {
+                padding: 1rem;
+            }
+            
+            pre {
+                font-size: 0.8rem;
+            }
+            
+            .step {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="emoji">🧹</span>
+            <h1>PREPROCESAMIENTO</h1>
+            <p style="color: white; font-size: 1.2rem; opacity: 0.95;">Limpieza y Tokenización de Textos con NLTK</p>
+        </div>
+
+        <div class="info-box">
+            <h3>💡 ¿Qué es el Preprocesamiento?</h3>
+            <p>
+                El <strong>preprocesamiento</strong> es una fase crucial en el análisis de lenguaje natural que 
+                consiste en limpiar y preparar el texto antes de su análisis. Este proceso incluye convertir 
+                el texto a minúsculas, eliminar caracteres especiales, quitar espacios innecesarios y tokenizar 
+                (dividir en palabras u oraciones). Un buen preprocesamiento mejora significativamente la calidad 
+                del análisis posterior, eliminando ruido y estandarizando el formato del texto.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🎯 Pasos del Preprocesamiento</h2>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Convertir a minúsculas</h4>
+                        <p>Normaliza el texto para que "Python" y "python" se traten igual.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Eliminar espacios extras</h4>
+                        <p>Quita espacios al inicio, final y saltos de línea innecesarios.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Eliminar caracteres especiales</h4>
+                        <p>Remueve números, símbolos y puntuación usando expresiones regulares.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Tokenizar</h4>
+                        <p>Divide el texto en palabras u oraciones para su análisis individual.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📝 Código del Ejemplo</h2>
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-dot dot-red"></span>
+                    <span class="code-dot dot-yellow"></span>
+                    <span class="code-dot dot-green"></span>
+                    <span style="color: #999; margin-left: 1rem; font-size: 0.9rem;">preprocesamiento.py</span>
+                </div>
+                <pre>
+                    import re
+import nltk
+#descarga de modelo de tokenizacion
+#nltk.download('punkt_tab')
+#importamos las funsiones de la libreria
+from nltk.tokenize import word_tokenize,sent_tokenize
+
+#ejemplo de texto  a tokenizar
+texto=("En la materia de lenguaje natural PNL y vision artificial VA, se desarroolola"
+       "un portafolio de practicas con material de apoyo para los siguientes"
+       "semestres de la especialidad, incluyendo practicas y glosario de funciones"
+       "por cada práctica")
+
+#como buena practica antes de tokenizar, hay que limpiar el texto
+#convertir en minuscula
+texto_limpio=texto.lower()
+
+#quitar saltos de linea y espacio
+texto_limpio=texto_limpio.strip()
+
+#eliminar caracteres que no sean letras
+texto_limpio = re.sub(r'[^a-záéíóúüñ\s]', '', texto_limpio)
+
+#TOKENIZAR
+#token por palabras
+palabras=word_tokenize(texto_limpio,language='spanish')
+print("token en palabras",palabras)
+
+#token por oraciones
+oraciones=sent_tokenize(texto)
+print("token en oraciones:",oraciones)
+
+print("Texto original",texto)
+print(texto_limpio)
+
+("el preprocesamienhto de texto en procesamiento de lenguaje naftural (PNL) es"
+ "una etapa esecial que transforma datos textuales crudos en u  formato"
+ "estructurado,limpo y adecuado npara que los algoritmos  de aprendizajhe "
+ "automatico puedan analizarlos y proesaqrlos de manera eficiente ."
+ "este3 proceso ayu7da a reducir ruido,estandarizar el texto y conservar"
+ "el significado esencialdel lenguaje")
+                </pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📚 Glosario de Funciones</h2>
+            <div class="glossary">
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📦</span> import re
+                    </div>
+                    <p class="glossary-description">
+                        Importa el módulo de expresiones regulares (Regular Expressions) de Python. Permite 
+                        buscar, reemplazar y manipular patrones de texto de forma avanzada y eficiente.
+                        <br><br>
+                        <strong>Uso:</strong> Esencial para limpieza avanzada de texto
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔤</span> import nltk
+                    </div>
+                    <p class="glossary-description">
+                        Importa Natural Language Toolkit, una de las bibliotecas más populares de Python para 
+                        procesamiento de lenguaje natural. Incluye herramientas para tokenización, análisis 
+                        sintáctico, clasificación y más.
+                        <br><br>
+                        <strong>Instalación:</strong> <code>pip install nltk</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>⬇️</span> lower()
+                    </div>
+                    <p class="glossary-description">
+                        Convierte todo el texto a minúsculas. Es fundamental para normalizar el texto y asegurar 
+                        que palabras con diferentes capitalizaciones se traten como idénticas.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>texto.lower()</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>✂️</span> strip()
+                    </div>
+                    <p class="glossary-description">
+                        Elimina espacios en blanco, tabulaciones y saltos de línea al inicio y final del texto. 
+                        Limpia el texto de espacios innecesarios que pueden interferir con el análisis.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>texto.strip()</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔍</span> re.sub()
+                    </div>
+                    <p class="glossary-description">
+                        Sustituye patrones de texto usando expresiones regulares. El patrón <code>r'[^a-záéíóúüñ\s]'</code> 
+                        indica "todo lo que NO sea letras (incluyendo acentos) ni espacios", reemplazándolo por cadena vacía.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>re.sub(patrón, reemplazo, texto)</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📖</span> word_tokenize()
+                    </div>
+                    <p class="glossary-description">
+                        Función de NLTK que divide un texto en palabras individuales (tokens). Considera reglas 
+                        lingüísticas específicas del idioma para separar correctamente las palabras.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>word_tokenize(texto, language='spanish')</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📝</span> sent_tokenize()
+                    </div>
+                    <p class="glossary-description">
+                        Función de NLTK que divide un texto en oraciones. Utiliza algoritmos inteligentes para 
+                        identificar finales de oración considerando puntos, abreviaturas y otros patrones.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>sent_tokenize(texto)</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🌍</span> language='spanish'
+                    </div>
+                    <p class="glossary-description">
+                        Parámetro que especifica el idioma del texto para aplicar reglas de tokenización 
+                        específicas. NLTK ajusta su procesamiento según las características del español.
+                        <br><br>
+                        <strong>Idiomas:</strong> 'spanish', 'english', 'french', etc.
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>⚙️</span> Expresiones Regulares
+                    </div>
+                    <p class="glossary-description">
+                        Patrones de búsqueda de texto. El prefijo <code>r</code> indica "raw string" para evitar 
+                        conflictos con caracteres de escape. Los corchetes <code>[ ]</code> definen conjuntos de 
+                        caracteres, y <code>^</code> niega la selección.
+                        <br><br>
+                        <strong>Ejemplo:</strong> <code>r'[^a-z]'</code> = "no letras minúsculas"
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📥</span> from ... import
+                    </div>
+                    <p class="glossary-description">
+                        Importa funciones específicas de un módulo, permitiendo usarlas directamente sin prefijo. 
+                        En lugar de <code>nltk.tokenize.word_tokenize()</code>, se puede usar solo <code>word_tokenize()</code>.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>from modulo import funcion</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>💾</span> nltk.download()
+                    </div>
+                    <p class="glossary-description">
+                        Descarga recursos adicionales de NLTK como modelos de tokenización, corpus, y datos 
+                        de entrenamiento. 'punkt_tab' es el modelo necesario para tokenización por palabras y oraciones.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>nltk.download('punkt_tab')</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🖨️</span> print()
+                    </div>
+                    <p class="glossary-description">
+                        Muestra información en la consola. Permite visualizar el texto original, el texto limpio 
+                        y los resultados de la tokenización para verificar cada paso del preprocesamiento.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>print(variable)</code>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="portfolio_ia.html" class="back-button">⬅️ Volver al Portafolio</a>
+        </div>
+    </div>
+</body>
+</html>

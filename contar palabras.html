@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contar Palabras - Procesamiento de Lenguaje Natural</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(212, 98, 42, 0.2);
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .emoji {
+            font-size: clamp(3rem, 8vw, 5rem);
+            margin-bottom: 1rem;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(212, 98, 42, 0.15);
+        }
+
+        .section-title {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: #d4622a;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: linear-gradient(180deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 5px;
+        }
+
+        .code-container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-header {
+            background: #1a1a1a;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px 10px 0 0;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        pre {
+            margin: 0;
+            color: #f8f8f2;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .comment { color: #6272a4; font-style: italic; }
+        .function { color: #50fa7b; }
+        .variable { color: #8be9fd; }
+        .number { color: #bd93f9; }
+
+        .glossary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .glossary-item {
+            background: linear-gradient(135deg, #fff9f0 0%, #ffe8cc 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #ff8c42;
+            transition: all 0.3s ease;
+        }
+
+        .glossary-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.15);
+        }
+
+        .glossary-title {
+            font-size: 1.3rem;
+            color: #d4622a;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .glossary-description {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left: 5px solid #ff8c42;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+
+        .info-box h3 {
+            color: #d4622a;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .steps-container {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .step {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #ffb347;
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            transform: translateX(10px);
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.1);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            color: #d4622a;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .step-content p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.3);
+            margin-top: 2rem;
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(212, 98, 42, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .section {
+                padding: 1.5rem;
+            }
+            
+            .code-container {
+                padding: 1rem;
+            }
+            
+            pre {
+                font-size: 0.8rem;
+            }
+            
+            .step {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="emoji">🔢</span>
+            <h1>CONTAR PALABRAS</h1>
+            <p style="color: white; font-size: 1.2rem; opacity: 0.95;">Análisis de Frecuencia en Textos</p>
+        </div>
+
+        <div class="info-box">
+            <h3>💡 ¿Para qué contar palabras?</h3>
+            <p>
+                El conteo de palabras es fundamental en el procesamiento de lenguaje natural. Permite analizar 
+                la frecuencia con la que aparecen términos específicos en un texto, identificar palabras clave, 
+                detectar patrones lingüísticos y realizar análisis estadísticos del lenguaje. Esta técnica es la 
+                base para muchas aplicaciones como análisis de sentimientos, clasificación de textos y detección 
+                de temas.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🎯 Proceso Paso a Paso</h2>
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Limpiar el texto</h4>
+                        <p>Convertir a minúsculas y eliminar signos de puntuación para normalizar el texto.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Tokenización</h4>
+                        <p>Dividir el texto en palabras individuales (tokens) utilizando espacios como separadores.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Contar palabras</h4>
+                        <p>Usar un diccionario para almacenar cada palabra y su frecuencia de aparición.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Mostrar resultados</h4>
+                        <p>Presentar el diccionario con todas las palabras y sus respectivos conteos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📝 Código del Ejemplo</h2>
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-dot dot-red"></span>
+                    <span class="code-dot dot-yellow"></span>
+                    <span class="code-dot dot-green"></span>
+                    <span style="color: #999; margin-left: 1rem; font-size: 0.9rem;">contar_palabras.py</span>
+                </div>
+                <pre>
+                    #frase ejemplo
+frase= "python es divertido y python poderoso "
+
+#1.-limpiar el texto (minuscula y sin puntuacion)
+frase_limpia= frase.replace(".","").replace(".","").lower()
+
+#2.- Dividir en palabras (tokenizacion)
+tokens=frase_limpia.split()
+#3.- contar palabras usando diccionario
+frecuencia={}
+for palabra in tokens:
+    if palabra in frecuencia:
+        frecuencia[palabra]+=1
+    else:
+        frecuencia[palabra]=1
+
+#4.-mostrar resultados
+print(frecuencia)
+                </pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📚 Glosario de Funciones y Conceptos</h2>
+            <div class="glossary">
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📖</span> Diccionarios {}
+                    </div>
+                    <p class="glossary-description">
+                        Estructura de datos que almacena pares clave-valor. En este caso, la clave es la palabra 
+                        y el valor es su frecuencia. Permite búsquedas y actualizaciones rápidas.
+                        <br><br>
+                        <strong>Ejemplo:</strong> <code>{'python': 2, 'es': 1}</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔄</span> Bucle for
+                    </div>
+                    <p class="glossary-description">
+                        Estructura de control que itera sobre cada elemento de una secuencia. En este código, 
+                        recorre cada palabra de la lista de tokens para contarla.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>for item in lista:</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>❓</span> Condicional if
+                    </div>
+                    <p class="glossary-description">
+                        Evalúa si una condición es verdadera. Aquí verifica si una palabra ya existe en el 
+                        diccionario antes de incrementar su contador o agregarla.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>if condición: ... else: ...</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>➕</span> Operador +=
+                    </div>
+                    <p class="glossary-description">
+                        Operador de incremento que suma un valor a una variable y guarda el resultado en la misma 
+                        variable. Se usa para incrementar el contador de frecuencia.
+                        <br><br>
+                        <strong>Ejemplo:</strong> <code>contador += 1</code> es igual a <code>contador = contador + 1</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔍</span> Operador in
+                    </div>
+                    <p class="glossary-description">
+                        Verifica si un elemento existe dentro de una colección (lista, diccionario, string, etc.). 
+                        Retorna True si el elemento está presente, False si no lo está.
+                        <br><br>
+                        <strong>Uso:</strong> <code>if palabra in diccionario:</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>✂️</span> split()
+                    </div>
+                    <p class="glossary-description">
+                        Divide un string en una lista de palabras usando un delimitador (por defecto, espacios). 
+                        Es esencial para la tokenización del texto.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>texto.split()</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>⬇️</span> lower()
+                    </div>
+                    <p class="glossary-description">
+                        Convierte todo el texto a minúsculas. Asegura que "Python" y "python" se cuenten como 
+                        la misma palabra, evitando duplicados por diferencias de capitalización.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>texto.lower()</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔄</span> replace()
+                    </div>
+                    <p class="glossary-description">
+                        Reemplaza todas las ocurrencias de un carácter o subcadena por otro. Se usa para limpiar 
+                        el texto eliminando puntuación.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>texto.replace(viejo, nuevo)</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🖨️</span> print()
+                    </div>
+                    <p class="glossary-description">
+                        Muestra información en la consola. Imprime el diccionario completo con las frecuencias 
+                        de cada palabra encontrada en el texto.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>print(variable)</code>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="portfolio_ia.html" class="back-button">⬅️ Volver al Portafolio</a>
+        </div>
+    </div>
+</body>
+</html>

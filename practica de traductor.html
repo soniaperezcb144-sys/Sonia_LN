@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traductor - Procesamiento de Lenguaje Natural</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(212, 98, 42, 0.2);
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .emoji {
+            font-size: clamp(3rem, 8vw, 5rem);
+            margin-bottom: 1rem;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(212, 98, 42, 0.15);
+        }
+
+        .section-title {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: #d4622a;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: linear-gradient(180deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 5px;
+        }
+
+        .code-container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-header {
+            background: #1a1a1a;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px 10px 0 0;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        pre {
+            margin: 0;
+            color: #f8f8f2;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .comment { color: #6272a4; font-style: italic; }
+        .function { color: #50fa7b; }
+        .variable { color: #8be9fd; }
+        .number { color: #bd93f9; }
+
+        .glossary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .glossary-item {
+            background: linear-gradient(135deg, #fff9f0 0%, #ffe8cc 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #ff8c42;
+            transition: all 0.3s ease;
+        }
+
+        .glossary-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.15);
+        }
+
+        .glossary-title {
+            font-size: 1.3rem;
+            color: #d4622a;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .glossary-description {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left: 5px solid #ff8c42;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+
+        .info-box h3 {
+            color: #d4622a;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .keys-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .key-card {
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .key-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(212, 98, 42, 0.3);
+        }
+
+        .key-card .key {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 255, 255, 0.2);
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .key-card .flag {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .install-box {
+            background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .install-box h4 {
+            color: #ffb347;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .install-box code {
+            background: #3a3a3a;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            display: inline-block;
+            color: #50fa7b;
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.3);
+            margin-top: 2rem;
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(212, 98, 42, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .section {
+                padding: 1.5rem;
+            }
+            
+            .code-container {
+                padding: 1rem;
+            }
+            
+            pre {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="emoji">🌍</span>
+            <h1>TRADUCTOR</h1>
+            <p style="color: white; font-size: 1.2rem; opacity: 0.95;">Traductor Interactivo con Deep Translator</p>
+        </div>
+
+        <div class="info-box">
+            <h3>💡 ¿Qué es Deep Translator?</h3>
+            <p>
+                <strong>Deep Translator</strong> es una biblioteca de Python que facilita la traducción de textos 
+                entre múltiples idiomas utilizando diferentes servicios de traducción como Google Translate, 
+                Microsoft Translator, DeepL, entre otros. Es una herramienta versátil que simplifica la integración 
+                de capacidades de traducción en aplicaciones Python, permitiendo traducir texto, documentos y 
+                detectar idiomas de forma automática.
+            </p>
+        </div>
+
+        <div class="install-box">
+            <h4>📦 Instalación de Librerías</h4>
+            <p style="color: #ccc; margin-bottom: 0.5rem;">Antes de ejecutar el programa, instala:</p>
+            <code>pip install deep-translator keyboard</code>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">⌨️ Controles del Programa</h2>
+            <div class="keys-info">
+                <div class="key-card">
+                    <div class="flag">🔠</div>
+                    <div class="key">A</div>
+                    <h4>Inglés</h4>
+                    <p>Traducir al inglés (English)</p>
+                </div>
+                <div class="key-card">
+                    <div class="flag">🇩🇪</div>
+                    <div class="key">X</div>
+                    <h4>Alemán</h4>
+                    <p>Traducir al alemán (Deutsch)</p>
+                </div>
+                <div class="key-card">
+                    <div class="flag">🇫🇷</div>
+                    <div class="key">Y</div>
+                    <h4>Francés</h4>
+                    <p>Traducir al francés (Français)</p>
+                </div>
+                <div class="key-card">
+                    <div class="flag">👋</div>
+                    <div class="key">Q</div>
+                    <h4>Salir</h4>
+                    <p>Cerrar el programa</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📝 Código del Ejemplo</h2>
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-dot dot-red"></span>
+                    <span class="code-dot dot-yellow"></span>
+                    <span class="code-dot dot-green"></span>
+                    <span style="color: #999; margin-left: 1rem; font-size: 0.9rem;">traductor.py</span>
+                </div>
+                <pre>
+                    from deep_translator import GoogleTranslator
+import keyboard
+
+def traducir(texto, idioma_destino):
+    """Traduce un texto del español al idioma elegido"""
+    traduccion = GoogleTranslator(source='es', target=idioma_destino).translate(texto)
+    return traduccion
+
+def main():
+    print("===  Traductor español/idioma escogido ===")
+    print("Presiona:")
+    print("  I= Traducir al inglés")
+    print("  A= Traducir al alemán")
+    print("  F= Traducir al francés")
+    print("  Y= Traducir al italiano")
+    print("  P= Traducir al portugues")
+    print("  x= Salir del programa")
+
+    while True:
+        texto = input("\nEscribe un texto en español: ")
+
+        print("\nAhora presiona una tecla para seleccionar el idioma:")
+        print("I (inglés) | A (alemán) | F (francés) |Y (italiano) |P portugues) | X (salir del traductor)")
+
+        while True:
+            if keyboard.is_pressed('I'):
+                print("\n La traducció al inglés:")
+                print(traducir(texto, 'en'))
+                break
+            elif keyboard.is_pressed('A'):
+                print("\n La traducció al alemán:")
+                print(traducir(texto, 'de'))
+                break
+            elif keyboard.is_pressed('F'):
+                print("\n La traducció al francés:")
+                print(traducir(texto, 'fr'))
+                break
+            elif keyboard.is_pressed('Y'):
+                print("\n La traducció al italiano:")
+                print(traducir(texto, 'it'))
+                break
+            elif keyboard.is_pressed('P'):
+                print("\n La traducció al portugues:")
+                print(traducir(texto, 'pt'))
+                break
+            elif keyboard.is_pressed('X'):
+                print("\n ¡¡¡¡¡¡Saliendo del traductor con exito!!!!!!...")
+                return
+
+if __name__ == "__main__":
+    main()
+
+                </pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📚 Glosario de Funciones</h2>
+            <div class="glossary">
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🌐</span> GoogleTranslator
+                    </div>
+                    <p class="glossary-description">
+                        Clase de deep-translator que utiliza la API de Google Translate. Permite traducir textos 
+                        entre más de 100 idiomas de forma gratuita. Requiere especificar el idioma origen (source) 
+                        y el idioma destino (target).
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>GoogleTranslator(source='es', target='en')</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔄</span> translate()
+                    </div>
+                    <p class="glossary-description">
+                        Método que realiza la traducción del texto. Recibe como parámetro el texto a traducir y 
+                        retorna la traducción en el idioma especificado. Se encadena después de crear el objeto 
+                        GoogleTranslator.
+                        <br><br>
+                        <strong>Uso:</strong> <code>traductor.translate(texto)</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>⌨️</span> keyboard.is_pressed()
+                    </div>
+                    <p class="glossary-description">
+                        Función del módulo keyboard que detecta si una tecla específica está siendo presionada 
+                        en tiempo real. Retorna True si la tecla está presionada, False en caso contrario.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>keyboard.is_pressed('tecla')</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📝</span> input()
+                    </div>
+                    <p class="glossary-description">
+                        Función de Python que solicita entrada de texto al usuario. Pausa la ejecución del programa 
+                        hasta que el usuario escribe algo y presiona Enter. Retorna el texto ingresado como string.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>input("mensaje")</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔧</span> def función()
+                    </div>
+                    <p class="glossary-description">
+                        Define una función personalizada en Python. Permite encapsular código reutilizable. 
+                        En este programa se definen <code>traducir()</code> para traducir y <code>main()</code> 
+                        para ejecutar el programa principal.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>def nombre_funcion(parametros):</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>↩️</span> return
+                    </div>
+                    <p class="glossary-description">
+                        Palabra clave que devuelve un valor desde una función y finaliza su ejecución. En 
+                        <code>traducir()</code> retorna el texto traducido. En <code>main()</code> termina 
+                        el programa cuando se presiona 'q'.
+                        <br><br>
+                        <strong>Uso:</strong> <code>return valor</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔄</span> while True
+                    </div>
+                    <p class="glossary-description">
+                        Crea un bucle infinito que se ejecuta continuamente. Se usa dos veces: uno para mantener 
+                        el programa activo aceptando textos, otro para esperar que el usuario presione una tecla.
+                        <br><br>
+                        <strong>Control:</strong> Se detiene con <code>break</code> o <code>return</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>❓</span> if/elif/else
+                    </div>
+                    <p class="glossary-description">
+                        Estructuras condicionales que permiten ejecutar código diferente según la condición. 
+                        <code>if</code> evalúa la primera condición, <code>elif</code> evalúa alternativas, 
+                        <code>else</code> se ejecuta si ninguna es verdadera.
+                        <br><br>
+                        <strong>Uso:</strong> Determina qué idioma traducir según la tecla presionada
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🛑</span> break
+                    </div>
+                    <p class="glossary-description">
+                        Termina inmediatamente el bucle más cercano. Se usa después de cada traducción para 
+                        salir del bucle de detección de teclas y permitir al usuario ingresar un nuevo texto.
+                        <br><br>
+                        <strong>Efecto:</strong> Sale del <code>while True</code> interno
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📦</span> from ... import
+                    </div>
+                    <p class="glossary-description">
+                        Importa elementos específicos de un módulo. Permite usar <code>GoogleTranslator</code> 
+                        directamente sin escribir <code>deep_translator.GoogleTranslator</code>.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>from modulo import clase</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🎯</span> if __name__ == "__main__"
+                    </div>
+                    <p class="glossary-description">
+                        Verifica si el script está siendo ejecutado directamente (no importado como módulo). 
+                        Es una práctica común en Python para ejecutar código solo cuando el archivo se ejecuta 
+                        directamente.
+                        <br><br>
+                        <strong>Función:</strong> Punto de entrada del programa
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🌍</span> Códigos de Idioma
+                    </div>
+                    <p class="glossary-description">
+                        Abreviaturas estándar ISO 639-1 para identificar idiomas. En el código: 'es' = español, 
+                        'en' = inglés, 'de' = alemán (Deutsch), 'fr' = francés. Deep Translator soporta más 
+                        de 100 códigos de idioma.
+                        <br><br>
+                        <strong>Ejemplos:</strong> 'es', 'en', 'de', 'fr', 'it', 'pt', 'ja', 'zh'
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="portfolio_ia.html" class="back-button">⬅️ Volver al Portafolio</a>
+        </div>
+    </div>
+</body>
+</html>
