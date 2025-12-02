@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Componentes - Chatbot Arduino</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe4cc 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 20px;
+            margin-bottom: 3rem;
+            box-shadow: 0 10px 30px rgba(212, 98, 42, 0.2);
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: white;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .emoji {
+            font-size: clamp(3rem, 8vw, 5rem);
+            margin-bottom: 1rem;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(212, 98, 42, 0.15);
+        }
+
+        .section-title {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            color: #d4622a;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 5px;
+            height: 30px;
+            background: linear-gradient(180deg, #ffb347 0%, #ff8c42 100%);
+            border-radius: 5px;
+        }
+
+        .code-container {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            position: relative;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .code-header {
+            background: #1a1a1a;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px 10px 0 0;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: sticky;
+            top: -1.5rem;
+            z-index: 10;
+        }
+
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-red { background: #ff5f56; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #27c93f; }
+
+        pre {
+            margin: 0;
+            color: #f8f8f2;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .keyword { color: #ff79c6; }
+        .string { color: #f1fa8c; }
+        .comment { color: #6272a4; font-style: italic; }
+        .function { color: #50fa7b; }
+        .variable { color: #8be9fd; }
+
+        .glossary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .glossary-item {
+            background: linear-gradient(135deg, #fff9f0 0%, #ffe8cc 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid #ff8c42;
+            transition: all 0.3s ease;
+        }
+
+        .glossary-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.15);
+        }
+
+        .glossary-title {
+            font-size: 1.3rem;
+            color: #d4622a;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .glossary-description {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left: 5px solid #ff8c42;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+
+        .info-box h3 {
+            color: #d4622a;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .component-chip {
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            padding: 0.8rem 1.2rem;
+            border-radius: 25px;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(212, 98, 42, 0.2);
+        }
+
+        .component-chip:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.3);
+        }
+
+        .back-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #ffb347 0%, #ff8c42 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 98, 42, 0.3);
+            margin-top: 2rem;
+        }
+
+        .back-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(212, 98, 42, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .section {
+                padding: 1.5rem;
+            }
+            
+            .code-container {
+                padding: 1rem;
+            }
+            
+            pre {
+                font-size: 0.75rem;
+            }
+
+            .components-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="emoji">🤖</span>
+            <h1>CHAT COMPONENTES</h1>
+            <p style="color: white; font-size: 1.2rem; opacity: 0.95;">Chatbot Educativo de Componentes Arduino</p>
+        </div>
+
+        <div class="info-box">
+            <h3>💡 ¿Qué es este Chatbot?</h3>
+            <p>
+                Este <strong>chatbot educativo</strong> está diseñado para ayudarte a aprender sobre los 
+                <strong>componentes de Arduino</strong>. Utiliza un diccionario para almacenar 26 componentes 
+                diferentes con sus definiciones. El usuario puede preguntar sobre cualquier componente escribiendo 
+                su nombre, y el chatbot responderá con una explicación clara. Si el componente no existe o está 
+                mal escrito, el chatbot solicitará que se escriba correctamente. Es una herramienta perfecta para 
+                estudiantes y principiantes en electrónica y robótica.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🔧 Componentes Disponibles (26 total)</h2>
+            <div class="components-grid">
+                <div class="component-chip">📋 Protoboard</div>
+                <div class="component-chip">📐 Protoboard de expansión</div>
+                <div class="component-chip">🎛️ Potenciómetro</div>
+                <div class="component-chip">📺 Módulo LCD</div>
+                <div class="component-chip">📡 Sensor ultrasónico</div>
+                <div class="component-chip">⚙️ Motor DC</div>
+                <div class="component-chip">🌡️ Sensor de temperatura</div>
+                <div class="component-chip">🔊 Buzzer</div>
+                <div class="component-chip">🔘 Botón</div>
+                <div class="component-chip">🕹️ Módulo de joystick</div>
+                <div class="component-chip">🔌 Arduino Nano</div>
+                <div class="component-chip">🎮 Controlador motor paso a paso</div>
+                <div class="component-chip">🔄 Motor paso a paso</div>
+                <div class="component-chip">🦾 Servomotor</div>
+                <div class="component-chip">⚡ Motor de 3 a 6 voltios</div>
+                <div class="component-chip">💨 Aspa de ventilador</div>
+                <div class="component-chip">🔌 Módulo de relé de 5V</div>
+                <div class="component-chip">🎚️ Potenciómetro</div>
+                <div class="component-chip">🔔 Buzzer activo</div>
+                <div class="component-chip">🔳 Botones</div>
+                <div class="component-chip">🔢 Pantalla 4 dígitos 7 segmentos</div>
+                <div class="component-chip">7️⃣ Pantalla 1 dígito 7 segmentos</div>
+                <div class="component-chip">⌨️ Interruptores de membrana</div>
+                <div class="component-chip">📡 Control remoto</div>
+                <div class="component-chip">💾 Registro de turnos 74hc595</div>
+                <div class="component-chip">💡 Fotoresistencia</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📝 Código del Ejemplo</h2>
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-dot dot-red"></span>
+                    <span class="code-dot dot-yellow"></span>
+                    <span class="code-dot dot-green"></span>
+                    <span style="color: #999; margin-left: 1rem; font-size: 0.9rem;">chat_componentes.py</span>
+                </div>
+                <pre>  # Chatbot con análisis de sentimientos usando TextBlob y Deep-Translator
+import random
+from textblob import TextBlob
+from deep_translator import GoogleTranslator
+
+# Inicializar traductor
+traductor = GoogleTranslator(source='es', target='en')
+
+# LISTAS DE SALUDOS Y RESPUESTAS
+saludos = ["hola", "que tal", "buenos dias", "buenas tardes", "buen dia"]
+respuesta_saludos = ["hola como estas?", "como puedo ayudarte?", "hola como te va", "que hay?"]
+despedida = ["adios", "bye", "gracias", "nos vemos", "hasta luego", "salir"]
+respuesta_despedida = ["adios", "hasta pronto", "fue un placer ayudarte", "cuidate", "nos vemos luego", "bye"]
+
+# LISTAS PARA ANÁLISIS DE SENTIMIENTOS
+pregunta_sentimiento = ["como estas", "como te sientes", "que tal estas", "como andas"]
+respuesta_feliz = ["Me alegra que estes feliz!", "Que bueno que te sientas bien!", "Genial! Sigue asi!",
+                   "Excelente que estes contento!"]
+respuesta_triste = ["Lamento que estes triste", "Animo, todo mejora!", "Entiendo como te sientes",
+                    "Espero que te sientas mejor pronto"]
+respuesta_neutral = ["Entiendo", "Ok, gracias por compartir", "Comprendo como te sientes"]
+
+# Mensaje de bienvenida del chatbot
+print("Hola soy Chato, tu Chatbot de confianza, si deseas terminar escribe 'salir'")
+
+while True:
+    usuario = input("Tu: ").lower().strip()
+
+    if usuario in saludos:
+        print("Chatbot:", random.choice(respuesta_saludos))
+
+    elif usuario in pregunta_sentimiento:
+        print("Chatbot: Cuentame, ¿como te sientes? (feliz o triste)")
+
+    elif usuario in despedida:
+        print("Chatbot:", random.choice(respuesta_despedida))
+        break
+
+    else:
+        # Analizar sentimiento con TextBlob y Deep-Translator
+        # Traducir al inglés
+        texto_ingles = traductor.translate(usuario)
+
+        # Analizar sentimiento
+        analisis = TextBlob(texto_ingles)
+        polaridad = analisis.sentiment.polarity
+
+        print(f"Chatbot: [Analizando sentimiento... Polaridad: {polaridad:.2f}]")
+
+        # Responder según el sentimiento
+        if polaridad > 0.2:
+            print("Chatbot:", random.choice(respuesta_feliz))
+        elif polaridad < -0.2:
+            print("Chatbot:", random.choice(respuesta_triste))
+        else:
+            print("Chatbot:", random.choice(respuesta_neutral))</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📚 Glosario de Funciones</h2>
+            <div class="glossary">
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📖</span> Diccionarios {}
+                    </div>
+                    <p class="glossary-description">
+                        Estructura de datos que almacena pares clave-valor. En este chatbot, la clave es el nombre 
+                        del componente y el valor es su definición. Permite búsquedas rápidas y eficientes.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>{"clave": "valor"}</code>
+                        <br>
+                        <strong>Ejemplo:</strong> <code>{"protoboard": "Es una placa..."}</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📝</span> input()
+                    </div>
+                    <p class="glossary-description">
+                        Captura la entrada del usuario desde el teclado. En este programa, solicita el nombre 
+                        del componente sobre el que se desea aprender. Retorna el texto como string.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>input("mensaje")</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>⬇️</span> lower()
+                    </div>
+                    <p class="glossary-description">
+                        Convierte todo el texto a minúsculas. Asegura que el chatbot reconozca "Protoboard", 
+                        "PROTOBOARD" y "protoboard" como la misma entrada, mejorando la flexibilidad.
+                        <br><br>
+                        <strong>Ejemplo:</strong> "MOTOR DC" → "motor dc"
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔍</span> Operador in
+                    </div>
+                    <p class="glossary-description">
+                        Verifica si una clave existe dentro del diccionario. Retorna True si el componente está 
+                        en el diccionario, False si no existe. Permite validar la entrada del usuario.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>if componente in diccionario:</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔄</span> Bucle for
+                    </div>
+                    <p class="glossary-description">
+                        Itera sobre cada elemento del diccionario. Se usa para imprimir la lista completa de 
+                        componentes disponibles al inicio del programa, mostrando todas las opciones al usuario.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>for item in diccionario:</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>♾️</span> while True
+                    </div>
+                    <p class="glossary-description">
+                        Crea un bucle infinito que mantiene el chatbot ejecutándose continuamente. Solo se detiene 
+                        cuando el usuario escribe "salir" y se ejecuta el comando <code>break</code>.
+                        <br><br>
+                        <strong>Función:</strong> Mantiene la conversación activa
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>❓</span> if/else
+                    </div>
+                    <p class="glossary-description">
+                        Estructura condicional que determina qué hacer según la entrada. Primero verifica si es 
+                        "salir", luego si el componente existe en el diccionario, y finalmente muestra un error 
+                        si no se encuentra.
+                        <br><br>
+                        <strong>Función:</strong> Lógica de decisión del chatbot
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🛑</span> break
+                    </div>
+                    <p class="glossary-description">
+                        Termina inmediatamente el bucle <code>while True</code>. Se ejecuta cuando el usuario 
+                        escribe "salir", finalizando el programa y cerrando el chatbot.
+                        <br><br>
+                        <strong>Efecto:</strong> Sale del bucle y cierra el programa
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🖨️</span> print()
+                    </div>
+                    <p class="glossary-description">
+                        Muestra mensajes en la consola. Se usa para: mensaje de bienvenida, listar componentes, 
+                        mostrar definiciones y mensajes de error o despedida.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>print("mensaje")</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔑</span> Acceso a Diccionario
+                    </div>
+                    <p class="glossary-description">
+                        Obtiene el valor asociado a una clave usando corchetes. En este caso, recupera la 
+                        definición del componente solicitado usando el nombre como clave.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>diccionario[clave]</code>
+                        <br>
+                        <strong>Ejemplo:</strong> <code>componentes["protoboard"]</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>📋</span> Strings Multilínea
+                    </div>
+                    <p class="glossary-description">
+                        Cadenas de texto que ocupan múltiples líneas usando concatenación o comillas triples. 
+                        Se usan para definiciones largas de componentes que no caben en una sola línea.
+                        <br><br>
+                        <strong>Ejemplo:</strong> <code>"texto parte 1 " "texto parte 2"</code>
+                    </p>
+                </div>
+
+                <div class="glossary-item">
+                    <div class="glossary-title">
+                        <span>🔤</span> Comparación de Strings
+                    </div>
+                    <p class="glossary-description">
+                        Compara cadenas de texto para verificar si son exactamente iguales. Se usa para detectar 
+                        si el usuario escribió "salir" y para buscar componentes en el diccionario.
+                        <br><br>
+                        <strong>Sintaxis:</strong> <code>if texto == "salir":</code>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="index.html" class="back-button">⬅️ Volver al Portafolio</a>
+        </div>
+    </div>
+</body>
+</html>
